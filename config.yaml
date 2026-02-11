@@ -1,0 +1,236 @@
+# AI Feed Aggregator Configuration
+
+# Minimum interval (seconds) between fetches per source
+fetch_intervals:
+  rss: 600        # 10 minutes
+  arxiv: 300      # 5 minutes
+  reddit: 600
+  hackernews: 600
+  twitter: 3600
+
+# RSS feed URLs
+rss_feeds:
+  - name: "HuggingFace Blog"
+    url: "https://huggingface.co/blog/feed.xml"
+  - name: "TechCrunch AI"
+    url: "https://techcrunch.com/category/artificial-intelligence/feed/"
+  - name: "The Verge AI"
+    url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"
+  - name: "NVIDIA Blog"
+    url: "https://blogs.nvidia.com/feed/"
+  - name: "Google AI Blog"
+    url: "https://blog.google/technology/ai/rss/"
+  - name: "Apple Machine Learning"
+    url: "https://machinelearning.apple.com/rss.xml"
+  - name: "Qualcomm AI"
+    url: "https://www.qualcomm.com/news/onq/feed"
+
+# Arxiv categories to search
+arxiv:
+  categories:
+    - "cs.AI"
+    - "cs.LG"
+    - "cs.CL"
+    - "cs.CV"
+  max_results: 200
+  delay_between_calls: 3  # seconds
+
+# Reddit subreddits
+reddit:
+  subreddits:
+    - "MachineLearning"
+    - "LocalLLaMA"
+    - "EdgeComputing"
+    - "MLOps"
+  post_limit: 50
+  # Set these or use environment variables REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET
+  client_id: ""
+  client_secret: ""
+  user_agent: "ai_feed_aggregator/1.0"
+
+# Hacker News
+hackernews:
+  top_stories_count: 100
+  concurrency: 10
+
+# Twitter/X (stub - optional)
+twitter:
+  enabled: false
+  bearer_token: ""
+  accounts: []
+
+# Keyword filtering configuration
+topics:
+  hardware_inference:
+    label: "Hardware"
+    color: "#e74c3c"
+    keywords:
+      - "GPU inference"
+      - "TPU inference"
+      - "NPU"
+      - "neural processing unit"
+      - "inference accelerator"
+      - "inference chip"
+      - "AI chip"
+      - "AI accelerator"
+      - "hardware acceleration"
+      - "CUDA inference"
+      - "TensorRT"
+      - "NVIDIA inference"
+      - "AMD inference"
+      - "Intel inference"
+      - "Qualcomm AI"
+      - "Apple Neural Engine"
+      - "Groq"
+      - "Cerebras"
+      - "SambaNova"
+      - "inference hardware"
+      - "AI ASIC"
+      - "custom silicon"
+      - "inference throughput"
+      - "tokens per second"
+
+  inference_optimization:
+    label: "Optimization"
+    color: "#3498db"
+    keywords:
+      - "quantization"
+      - "GPTQ"
+      - "AWQ"
+      - "GGUF"
+      - "GGML"
+      - "model compression"
+      - "pruning"
+      - "knowledge distillation"
+      - "speculative decoding"
+      - "KV cache"
+      - "flash attention"
+      - "FlashAttention"
+      - "PagedAttention"
+      - "vLLM"
+      - "continuous batching"
+      - "inference optimization"
+      - "model optimization"
+      - "INT8"
+      - "INT4"
+      - "FP16"
+      - "FP8"
+      - "BF16"
+      - "mixed precision"
+      - "operator fusion"
+      - "kernel optimization"
+      - "ONNX Runtime"
+      - "torch.compile"
+      - "inference latency"
+      - "batch inference"
+
+  edge_inference:
+    label: "Edge"
+    color: "#2ecc71"
+    keywords:
+      - "on-device"
+      - "on device"
+      - "edge inference"
+      - "edge AI"
+      - "edge computing"
+      - "edge deployment"
+      - "mobile inference"
+      - "embedded AI"
+      - "embedded inference"
+      - "TensorFlow Lite"
+      - "TFLite"
+      - "Core ML"
+      - "ONNX"
+      - "OpenVINO"
+      - "MediaPipe"
+      - "ML Kit"
+      - "on-device model"
+      - "offline inference"
+      - "local inference"
+      - "local AI"
+      - "local LLM"
+      - "run locally"
+      - "running locally"
+      - "private inference"
+      - "Raspberry Pi"
+      - "Jetson"
+      - "edge device"
+
+  distributed_inference:
+    label: "Distributed Inference"
+    color: "#9b59b6"
+    keywords:
+      - "distributed inference"
+      - "model parallelism"
+      - "tensor parallelism"
+      - "pipeline parallelism"
+      - "model sharding"
+      - "inference cluster"
+      - "multi-GPU inference"
+      - "multi-node inference"
+      - "inference serving"
+      - "model serving"
+      - "Triton Inference"
+      - "Ray Serve"
+      - "inference scaling"
+      - "load balancing inference"
+      - "inference orchestration"
+      - "petals"
+      - "exo"
+      - "inference mesh"
+      - "federated inference"
+
+  distributed_training:
+    label: "Distributed Training"
+    color: "#e67e22"
+    keywords:
+      - "distributed training"
+      - "distributed finetuning"
+      - "distributed fine-tuning"
+      - "federated learning"
+      - "data parallelism"
+      - "DeepSpeed"
+      - "FSDP"
+      - "Megatron"
+      - "training cluster"
+      - "multi-GPU training"
+      - "multi-node training"
+      - "gradient accumulation"
+      - "gradient checkpointing"
+      - "LoRA"
+      - "QLoRA"
+      - "PEFT"
+      - "parameter efficient"
+      - "fine-tuning"
+      - "finetuning"
+      - "adapter tuning"
+      - "training optimization"
+
+  small_models:
+    label: "Small Models"
+    color: "#1abc9c"
+    keywords:
+      - "small language model"
+      - "SLM"
+      - "tiny model"
+      - "compact model"
+      - "lightweight model"
+      - "efficient model"
+      - "Phi-"
+      - "Gemma"
+      - "Llama 3"
+      - "Mistral"
+      - "Qwen"
+      - "SmolLM"
+      - "TinyLlama"
+      - "MobileLLM"
+      - "sub-billion"
+      - "1B model"
+      - "3B model"
+      - "7B model"
+      - "8B model"
+      - "model distillation"
+      - "small model"
+      - "on-device model"
+      - "mobile model"
+      - "edge model"

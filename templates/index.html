@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="controls">
+    <div class="controls-row">
+        <div class="source-filters">
+            <button class="filter-btn active" data-source="all">All</button>
+            <button class="filter-btn" data-source="Arxiv">Arxiv</button>
+            <button class="filter-btn" data-source="reddit">Reddit</button>
+            <button class="filter-btn" data-source="Hacker News">HN</button>
+            <button class="filter-btn" data-source="blog">Blogs</button>
+        </div>
+        <div class="actions">
+            <select id="sort-select">
+                <option value="date" {% if sort == 'date' %}selected{% endif %}>Sort by Date</option>
+                <option value="relevance" {% if sort == 'relevance' %}selected{% endif %}>Sort by Relevance</option>
+            </select>
+            <button id="refresh-btn" class="refresh-btn">
+                <span class="refresh-icon">&#x21bb;</span> Refresh
+            </button>
+        </div>
+    </div>
+    <div class="topic-filters">
+        <button class="topic-pill active" data-topic="all">All Topics</button>
+        {% for key, topic in topics.items() %}
+        <button class="topic-pill" data-topic="{{ key }}" style="--pill-color: {{ topic.color }}">
+            {{ topic.label }}
+        </button>
+        {% endfor %}
+    </div>
+</div>
+
+<div id="status-bar" class="status-bar hidden"></div>
+
+<div class="feed" id="feed">
+    {% if articles %}
+        {% for article in articles %}
+        <article class="card {% if article.is_read %}read{% endif %}"
+                 data-id="{{ article.id }}"
+                 data-source="{{ article.source }}"
+                 data-tags="{{ article.tags | join(',') }}"
+                 data-score="{{ article.relevance_score }}">
+            <div class="card-header">
+                <span class="source-badge">{{ article.source }}</span>
+                {% if article.author %}
+                <span class="author">{{ article.author }}</span>
+                {% endif %}
+                <span class="date">
+                    {% if article.published_at %}
+                        {{ article.published_at.strftime('%Y-%m-%d %H:%M') }}
+                    {% endif %}
+                </span>
+            </div>
+            <h2 class="card-title">
+                <a href="{{ article.url }}" target="_blank" rel="noopener" data-article-id="{{ article.id }}">
+                    {{ article.title }}
+                </a>
+            </h2>
+            {% if article.snippet %}
+            <p class="card-snippet">{{ article.snippet }}</p>
+            {% endif %}
+            <div class="card-tags">
+                {% for kw in article.matched_keywords[:5] %}
+                <span class="keyword-tag">{{ kw }}</span>
+                {% endfor %}
+                {% if article.matched_keywords | length > 5 %}
+                <span class="keyword-tag more">+{{ article.matched_keywords | length - 5 }}</span>
+                {% endif %}
+            </div>
+            <div class="card-topics">
+                {% for tag in article.tags %}
+                    {% if tag in topics %}
+                    <span class="topic-tag" style="background: {{ topics[tag].color }}20; color: {{ topics[tag].color }}; border: 1px solid {{ topics[tag].color }}40">
+                        {{ topics[tag].label }}
+                    </span>
+                    {% endif %}
+                {% endfor %}
+                <span class="score" title="Relevance score">{{ "%.1f" | format(article.relevance_score) }}</span>
+            </div>
+        </article>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <p>No articles yet. Click <strong>Refresh</strong> to fetch from all sources.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
