@@ -140,8 +140,7 @@ async def index(request: Request, sort: str = "date"):
     articles = await get_articles(sort_by=sort)
     config = get_config()
     topics = config.get("topics", {})
-    return templates.TemplateResponse("index.html", {
-        "request": request,
+    return templates.TemplateResponse(name="index.html", request=request, context={
         "articles": articles,
         "topics": topics,
         "sort": sort,
@@ -187,8 +186,7 @@ async def trends_ai_agents(request: Request):
         )
         summary_date = now
 
-    return templates.TemplateResponse("trends_ai_agents.html", {
-        "request": request,
+    return templates.TemplateResponse(name="trends_ai_agents.html", request=request, context={
         "summary_html": summary_html,
         "summary_date": summary_date,
         "articles": articles,
