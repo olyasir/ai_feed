@@ -46,6 +46,18 @@ CREATE TABLE IF NOT EXISTS fetch_log (
 );
 
 CREATE INDEX IF NOT EXISTS idx_fetch_log_source ON fetch_log(source, fetched_at DESC);
+
+CREATE TABLE IF NOT EXISTS trend_summaries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    topic TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    article_ids TEXT DEFAULT '[]',
+    date_from TEXT NOT NULL,
+    date_to TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_trend_summaries_topic ON trend_summaries(topic, created_at DESC);
 """
 
 
@@ -156,6 +168,45 @@ async def log_fetch(source: str, total_fetched: int, total_new: int, status: str
             (source, datetime.utcnow().isoformat(), total_fetched, total_new, status, error),
         )
         await db.commit()
+
+
+async def get_articles_by_tag(tag: str, days: int = 7) -> list[Article]:
+    """Fetch articles matching a tag from the last N days."""
+    from datetime import timedelta
+    cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            """SELECT * FROM articles
+               WHERE tags LIKE ? AND published_at >= ?
+               ORDER BY published_at DESC""",
+            (f'%"{tag}"%', cutoff),
+        )
+        rows = await cursor.fetchall()
+        return [Article.from_row(dict(row)) for row in rows]
+
+
+async def save_trend_summary(topic: str, summary: str, article_ids: list[int], date_from: str, date_to: str) -> None:
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """INSERT INTO trend_summaries (topic, summary, article_ids, date_from, date_to, created_at)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (topic, summary, json.dumps(article_ids), date_from, date_to, datetime.utcnow().isoformat()),
+        )
+        await db.commit()
+
+
+async def get_latest_trend_summary(topic: str) -> dict | None:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT * FROM trend_summaries WHERE topic = ? ORDER BY created_at DESC LIMIT 1",
+            (topic,),
+        )
+        row = await cursor.fetchone()
+        if row:
+            return dict(row)
+        return None
 
 
 async def last_fetch_time(source: str) -> datetime | None:

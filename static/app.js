@@ -36,10 +36,13 @@ document.addEventListener("DOMContentLoaded", () => {
             let sourceMatch = activeSource === "all";
             if (!sourceMatch) {
                 if (activeSource === "blog") {
-                    // "Blogs" matches anything that isn't Arxiv, Reddit, or HN
+                    // "Blogs" matches RSS blog sources only
                     sourceMatch = source !== "Arxiv"
                         && !source.startsWith("r/")
-                        && source !== "Hacker News";
+                        && source !== "Hacker News"
+                        && source !== "GitHub"
+                        && source !== "HuggingFace"
+                        && source !== "llama.cpp";
                 } else if (activeSource === "reddit") {
                     sourceMatch = source.startsWith("r/");
                 } else {

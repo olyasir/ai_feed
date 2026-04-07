@@ -7,6 +7,9 @@ fetch_intervals:
   reddit: 600
   hackernews: 600
   twitter: 3600
+  huggingface: 1800  # 30 minutes
+  github: 1800       # 30 minutes
+  llamacpp: 1800     # 30 minutes
 
 # RSS feed URLs
 rss_feeds:
@@ -24,6 +27,16 @@ rss_feeds:
     url: "https://machinelearning.apple.com/rss.xml"
   - name: "Qualcomm AI"
     url: "https://www.qualcomm.com/news/onq/feed"
+  - name: "Anthropic Blog"
+    url: "https://www.anthropic.com/rss.xml"
+  - name: "Ollama Blog"
+    url: "https://ollama.com/blog/feed"
+  - name: "Mozilla AI Blog"
+    url: "https://blog.mozilla.org/en/category/mozilla-ai/feed/"
+  - name: "Zyphra Blog"
+    url: "https://www.zyphra.com/blog/rss.xml"
+  - name: "Lightning Engineering"
+    url: "https://lightning.engineering/feed.xml"
 
 # Arxiv categories to search
 arxiv:
@@ -42,6 +55,8 @@ reddit:
     - "LocalLLaMA"
     - "EdgeComputing"
     - "MLOps"
+    - "ollama"
+    - "selfhosted"
   post_limit: 50
   # Set these or use environment variables REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET
   client_id: ""
@@ -205,6 +220,53 @@ topics:
       - "finetuning"
       - "adapter tuning"
       - "training optimization"
+
+  ai_agents:
+    label: "AI Agents"
+    color: "#f39c12"
+    keywords:
+      - "AI agent"
+      - "AI agents"
+      - "autonomous agent"
+      - "coding agent"
+      - "tool use"
+      - "tool calling"
+      - "function calling"
+      - "MCP server"
+      - "Model Context Protocol"
+      - "agentic"
+      - "agent framework"
+      - "agent loop"
+      - "multi-agent"
+      - "agent orchestration"
+      - "ReAct"
+      - "agent benchmark"
+      - "SWE-bench"
+      - "SWE-Bench"
+      - "OpenClaw"
+      - "computer use"
+      - "browser use"
+
+  speech_voice_ai:
+    label: "Speech/Voice"
+    color: "#8e44ad"
+    keywords:
+      - "text-to-speech"
+      - "TTS"
+      - "speech-to-text"
+      - "STT"
+      - "ASR"
+      - "automatic speech recognition"
+      - "voice cloning"
+      - "voice synthesis"
+      - "speech recognition"
+      - "real-time transcription"
+      - "Whisper"
+      - "Voxtral"
+      - "Parakeet"
+      - "voice assistant"
+      - "speech translation"
+      - "voice agent"
 
   small_models:
     label: "Small Models"

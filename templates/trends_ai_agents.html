@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="trends-page">
+    <div class="trends-header">
+        <h2>AI Agent Trends</h2>
+        <span class="article-count">{{ article_count }} articles this week</span>
+    </div>
+
+    {% if summary_html %}
+    <div class="trend-summary-box">
+        <div class="summary-meta">
+            {% if summary_date %}
+            <span>Generated {{ summary_date.strftime('%B %d, %Y at %H:%M UTC') }}</span>
+            {% endif %}
+            <button class="refresh-btn regenerate-btn" onclick="regenerateSummary()">
+                <span class="refresh-icon">&#x21bb;</span> Regenerate Summary
+            </button>
+        </div>
+        <div class="summary-content">
+            {{ summary_html | safe }}
+        </div>
+    </div>
+    {% else %}
+    <div class="trend-summary-box empty">
+        <p>No AI agent articles found in the past week. Try fetching new articles from the main feed first.</p>
+    </div>
+    {% endif %}
+
+    {% if articles %}
+    <h3 class="source-articles-heading">Source Articles</h3>
+    <div class="feed">
+        {% for article in articles %}
+        <div class="card">
+            <div class="card-header">
+                <span class="source-badge">{{ article.source }}</span>
+                {% if article.published_at %}
+                <span>{{ article.published_at.strftime('%b %d, %Y') }}</span>
+                {% endif %}
+                {% if article.author %}
+                <span>&middot; {{ article.author }}</span>
+                {% endif %}
+            </div>
+            <div class="card-title">
+                <a href="{{ article.url }}" target="_blank" rel="noopener">{{ article.title }}</a>
+            </div>
+            {% if article.snippet %}
+            <div class="card-snippet">{{ article.snippet }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+async function regenerateSummary() {
+    const btn = document.querySelector('.regenerate-btn');
+    btn.classList.add('loading');
+    btn.disabled = true;
+    try {
+        const res = await fetch('/api/trends/ai-agents/regenerate', { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+            window.location.reload();
+        } else {
+            alert(data.error || 'Failed to regenerate summary');
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    } finally {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+    }
+}
+</script>
+{% endblock %}
