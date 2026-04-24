@@ -133,8 +133,13 @@ async def get_articles(
     source: str | None = None,
     sort_by: str = "date",
     limit: int = 200,
+    days: int | None = None,
 ) -> list[Article]:
-    """Fetch articles from the database."""
+    """Fetch articles from the database.
+
+    `days` filters to articles published within the last N days. None = no filter.
+    """
+    from datetime import timedelta
     order = "published_at DESC" if sort_by == "date" else "relevance_score DESC"
     conditions = []
     params: list = []
@@ -142,6 +147,11 @@ async def get_articles(
     if source:
         conditions.append("source = ?")
         params.append(source)
+
+    if days is not None:
+        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        conditions.append("published_at >= ?")
+        params.append(cutoff)
 
     where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
@@ -207,6 +217,69 @@ async def get_latest_trend_summary(topic: str) -> dict | None:
         if row:
             return dict(row)
         return None
+
+
+async def get_existing_urls(urls: list[str]) -> set[str]:
+    """Return the subset of urls that already exist in the articles table."""
+    if not urls:
+        return set()
+    async with aiosqlite.connect(DB_PATH) as db:
+        placeholders = ",".join(["?"] * len(urls))
+        cursor = await db.execute(
+            f"SELECT url FROM articles WHERE url IN ({placeholders})", urls
+        )
+        rows = await cursor.fetchall()
+        return {row[0] for row in rows}
+
+
+async def get_articles_missing_summary(source: str, limit: int = 50) -> list[Article]:
+    """Return articles from a source that have no AI summary yet."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            """SELECT * FROM articles
+               WHERE source = ? AND (summary IS NULL OR summary = '')
+               ORDER BY published_at DESC
+               LIMIT ?""",
+            (source, limit),
+        )
+        rows = await cursor.fetchall()
+        return [Article.from_row(dict(row)) for row in rows]
+
+
+async def update_article_summary(article_id: int, summary: str) -> None:
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "UPDATE articles SET summary = ? WHERE id = ?",
+            (summary, article_id),
+        )
+        await db.commit()
+
+
+async def delete_old_articles(days: int) -> dict:
+    """Delete articles older than `days` and compact the DB.
+
+    Uses COALESCE(published_at, fetched_at) since a few sources don't set
+    published_at. Also trims fetch_log by the same cutoff. Returns counts.
+    """
+    from datetime import timedelta
+    cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+    async with aiosqlite.connect(DB_PATH) as db:
+        cur = await db.execute(
+            "DELETE FROM articles WHERE COALESCE(published_at, fetched_at) < ?",
+            (cutoff,),
+        )
+        articles_deleted = cur.rowcount
+        cur = await db.execute(
+            "DELETE FROM fetch_log WHERE fetched_at < ?", (cutoff,)
+        )
+        log_deleted = cur.rowcount
+        await db.commit()
+        # VACUUM reclaims space from deleted rows; cheap on a feed-sized DB
+        # and only runs when cleanup actually removed something.
+        if articles_deleted or log_deleted:
+            await db.execute("VACUUM")
+    return {"articles_deleted": articles_deleted, "fetch_log_deleted": log_deleted}
 
 
 async def last_fetch_time(source: str) -> datetime | None:

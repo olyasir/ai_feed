@@ -17,6 +17,7 @@ class RawArticle:
     published_at: datetime | None = None
     snippet: str = ""
     thumbnail_url: str = ""
+    summary: str | None = None
 
 
 @dataclass

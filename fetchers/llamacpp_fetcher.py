@@ -5,8 +5,10 @@ from datetime import datetime, timedelta
 
 import aiohttp
 
+from core.database import get_existing_urls
 from core.models import RawArticle
 from fetchers.base import BaseFetcher
+from plugins.summarizer import summarize_llamacpp_release
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +55,11 @@ class LlamaCppFetcher(BaseFetcher):
                     return []
                 releases = await resp.json()
 
+            # Skip AI summarization for releases we already have — avoids re-calling
+            # the API on every fetch cycle.
+            release_urls = [r.get("html_url", "") for r in releases if r.get("html_url")]
+            existing = await get_existing_urls(release_urls)
+
             for rel in releases:
                 tag = rel.get("tag_name", "")
                 name = rel.get("name", "") or tag
@@ -71,6 +78,10 @@ class LlamaCppFetcher(BaseFetcher):
                     except Exception:
                         pass
 
+                summary = None
+                if html_url not in existing:
+                    summary = await summarize_llamacpp_release(name, body)
+
                 articles.append(RawArticle(
                     url=html_url,
                     title=f"[llama.cpp Release] {name}",
@@ -79,6 +90,7 @@ class LlamaCppFetcher(BaseFetcher):
                     author=rel.get("author", {}).get("login", ""),
                     published_at=published,
                     snippet=snippet,
+                    summary=summary,
                 ))
         except Exception as e:
             logger.warning("llama.cpp releases fetch error: %s", e)

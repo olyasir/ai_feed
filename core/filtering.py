@@ -51,6 +51,7 @@ def filter_and_score(raw_articles: list[RawArticle]) -> list[Article]:
             published_at=raw.published_at,
             fetched_at=datetime.utcnow(),
             snippet=raw.snippet[:300],
+            summary=raw.summary,
             relevance_score=score,
             matched_keywords=matched,
             tags=sorted(matched_topics),

@@ -13,6 +13,14 @@
             <button class="filter-btn" data-source="blog">Blogs</button>
         </div>
         <div class="actions">
+            <select id="days-select">
+                <option value="1" {% if days == '1' %}selected{% endif %}>Last 24h</option>
+                <option value="3" {% if days == '3' %}selected{% endif %}>Last 3 days</option>
+                <option value="7" {% if days == '7' %}selected{% endif %}>Last 7 days</option>
+                <option value="14" {% if days == '14' %}selected{% endif %}>Last 14 days</option>
+                <option value="30" {% if days == '30' %}selected{% endif %}>Last 30 days</option>
+                <option value="all" {% if days == 'all' %}selected{% endif %}>All time</option>
+            </select>
             <select id="sort-select">
                 <option value="date" {% if sort == 'date' %}selected{% endif %}>Sort by Date</option>
                 <option value="relevance" {% if sort == 'relevance' %}selected{% endif %}>Sort by Relevance</option>
@@ -58,7 +66,9 @@
                     {{ article.title }}
                 </a>
             </h2>
-            {% if article.snippet %}
+            {% if article.summary %}
+            <div class="card-summary">{{ article.summary | safe }}</div>
+            {% elif article.snippet %}
             <p class="card-snippet">{{ article.snippet }}</p>
             {% endif %}
             <div class="card-tags">

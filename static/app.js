@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const refreshBtn = document.getElementById("refresh-btn");
     const statusBar = document.getElementById("status-bar");
     const sortSelect = document.getElementById("sort-select");
+    const daysSelect = document.getElementById("days-select");
 
     let activeSource = "all";
     let activeTopic = "all";
@@ -58,10 +59,15 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Sort
-    sortSelect.addEventListener("change", () => {
-        window.location.href = "/?sort=" + sortSelect.value;
-    });
+    function navigateWithFilters() {
+        const params = new URLSearchParams();
+        params.set("sort", sortSelect.value);
+        params.set("days", daysSelect.value);
+        window.location.href = "/?" + params.toString();
+    }
+
+    sortSelect.addEventListener("change", navigateWithFilters);
+    daysSelect.addEventListener("change", navigateWithFilters);
 
     // Refresh
     refreshBtn.addEventListener("click", async () => {

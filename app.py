@@ -15,14 +15,17 @@ from fastapi.templating import Jinja2Templates
 
 from core.config_loader import load_config, get_config
 from core.database import (
+    delete_old_articles,
     get_articles,
     get_articles_by_tag,
+    get_articles_missing_summary,
     get_latest_trend_summary,
     init_db,
     last_fetch_time,
     log_fetch,
     mark_read,
     save_trend_summary,
+    update_article_summary,
     upsert_articles,
 )
 from core.filtering import filter_and_score
@@ -34,7 +37,7 @@ from fetchers.twitter_fetcher import TwitterFetcher
 from fetchers.huggingface_fetcher import HuggingFaceFetcher
 from fetchers.github_trending_fetcher import GitHubTrendingFetcher
 from fetchers.llamacpp_fetcher import LlamaCppFetcher
-from plugins.summarizer import generate_trend_summary
+from plugins.summarizer import generate_trend_summary, summarize_llamacpp_release
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -57,6 +60,7 @@ FETCHERS = [
 scheduler = AsyncIOScheduler()
 
 SUMMARY_CACHE_HOURS = 24
+RETENTION_DAYS = 180  # keep ~6 months of articles; older ones are purged weekly
 
 
 async def run_fetch() -> dict:
@@ -100,6 +104,12 @@ async def scheduled_fetch():
     result = await run_fetch()
     logger.info("Scheduled fetch complete: %s", result)
 
+    try:
+        cleanup = await delete_old_articles(RETENTION_DAYS)
+        logger.info("Retention cleanup: %s", cleanup)
+    except Exception:
+        logger.exception("Retention cleanup failed")
+
     # Auto-regenerate AI agents trend summary after weekly fetch
     try:
         articles = await get_articles_by_tag("ai_agents", days=7)
@@ -136,14 +146,20 @@ async def shutdown():
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request, sort: str = "date"):
-    articles = await get_articles(sort_by=sort)
+async def index(request: Request, sort: str = "date", days: str = "7"):
+    days_int: int | None
+    try:
+        days_int = int(days) if days != "all" else None
+    except ValueError:
+        days_int = 7
+    articles = await get_articles(sort_by=sort, days=days_int)
     config = get_config()
     topics = config.get("topics", {})
     return templates.TemplateResponse(name="index.html", request=request, context={
         "articles": articles,
         "topics": topics,
         "sort": sort,
+        "days": days,
     })
 
 
@@ -192,6 +208,52 @@ async def trends_ai_agents(request: Request):
         "articles": articles,
         "article_count": len(articles),
     })
+
+
+@app.post("/api/cleanup")
+async def api_cleanup(days: int = RETENTION_DAYS):
+    result = await delete_old_articles(days)
+    return JSONResponse({"ok": True, "days": days, **result})
+
+
+@app.post("/api/llamacpp/regenerate-summaries")
+async def regenerate_llamacpp_summaries():
+    """Re-fetch release bodies from GitHub and generate AI summaries for existing
+    llama.cpp release articles that don't have one yet."""
+    import aiohttp
+
+    articles = await get_articles_missing_summary("llama.cpp", limit=20)
+    releases = [a for a in articles if a.source_id.startswith("llamacpp-rel-")]
+    if not releases:
+        return JSONResponse({"ok": True, "updated": 0, "message": "No releases missing summaries"})
+
+    updated = 0
+    headers = {
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "ai-feed-aggregator/1.0",
+    }
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30), headers=headers) as session:
+        for article in releases:
+            tag = article.source_id.removeprefix("llamacpp-rel-")
+            if not tag or article.id is None:
+                continue
+            try:
+                api_url = f"https://api.github.com/repos/ggml-org/llama.cpp/releases/tags/{tag}"
+                async with session.get(api_url) as resp:
+                    if resp.status != 200:
+                        logger.warning("GitHub release fetch %s returned %d", tag, resp.status)
+                        continue
+                    rel = await resp.json()
+                body = rel.get("body", "") or ""
+                name = rel.get("name", "") or tag
+                summary = await summarize_llamacpp_release(name, body)
+                if summary:
+                    await update_article_summary(article.id, summary)
+                    updated += 1
+            except Exception:
+                logger.exception("Failed to summarize llama.cpp release %s", tag)
+
+    return JSONResponse({"ok": True, "updated": updated, "total": len(releases)})
 
 
 @app.post("/api/trends/ai-agents/regenerate")

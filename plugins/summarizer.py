@@ -25,6 +25,54 @@ class NoOpSummarizer(BaseSummarizer):
         return ""
 
 
+async def summarize_llamacpp_release(title: str, body: str) -> str | None:
+    """Summarize a llama.cpp release body into plain English.
+
+    Returns a short HTML snippet describing what was shipped/fixed, or None
+    if the API key is missing or the call fails.
+    """
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        return None
+
+    body = (body or "").strip()
+    if not body:
+        return None
+
+    # Cap input: release notes can be huge (full changelogs). 8k chars is plenty
+    # for the model to identify the main themes.
+    truncated = body[:8000]
+
+    prompt = f"""You are summarizing a llama.cpp release for developers who want to know what actually changed, without reading raw commit messages.
+
+Release: {title}
+
+Raw release notes:
+{truncated}
+
+Write a concise, plain-English summary (3-6 bullet points) covering:
+- Notable new features or model support added
+- Important bug fixes (especially anything affecting correctness, crashes, or performance)
+- Breaking changes or behavior changes users should know about
+- Significant performance improvements (with approximate numbers if mentioned)
+
+Skip trivial items (typo fixes, CI tweaks, minor refactors). If the release is mostly routine maintenance, say so in one line instead of listing bullets.
+
+Output HTML only, using <ul><li>...</li></ul> for bullets or a single <p> for a one-line summary. No headings, no preamble."""
+
+    try:
+        client = anthropic.AsyncAnthropic(api_key=api_key)
+        message = await client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=600,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return message.content[0].text.strip()
+    except Exception as e:
+        logger.warning("llama.cpp release summarization failed: %s", e)
+        return None
+
+
 async def generate_trend_summary(articles: list) -> str:
     """Generate an HTML trend summary of AI agent articles using Claude."""
     api_key = os.environ.get("ANTHROPIC_API_KEY")

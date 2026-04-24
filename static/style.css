@@ -234,6 +234,26 @@ main {
     overflow: hidden;
 }
 
+.card-summary {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    line-height: 1.45;
+}
+
+.card-summary ul {
+    margin: 0.25rem 0;
+    padding-left: 1.1rem;
+}
+
+.card-summary li {
+    margin-bottom: 0.2rem;
+}
+
+.card-summary p {
+    margin: 0.25rem 0;
+}
+
 .card-tags {
     display: flex;
     gap: 0.25rem;
