@@ -37,6 +37,8 @@ rss_feeds:
     url: "https://www.zyphra.com/blog/rss.xml"
   - name: "Lightning Engineering"
     url: "https://lightning.engineering/feed.xml"
+  - name: "AI News (smol.ai)"
+    url: "https://news.smol.ai/rss.xml"
 
 # Arxiv categories to search
 arxiv:
